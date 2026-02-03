@@ -4,4 +4,7 @@ __pycache__/
 .idea/
 _bmad/
 _bmad-output/
+!_bmad-output/stories/
+!_bmad-output/stories/*.md
 aws_q.md
+.tmp/

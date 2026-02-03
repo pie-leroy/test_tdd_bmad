@@ -1,0 +1,30 @@
+name: bmad-sync
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run BMAD sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PROJECT_ID: ${{ secrets.GITHUB_PROJECT_ID }}
+          GITHUB_STATUS_FIELD_ID: ${{ secrets.GITHUB_STATUS_FIELD_ID }}
+          GITHUB_STATUS_TODO_ID: ${{ secrets.GITHUB_STATUS_TODO_ID }}
+          GITHUB_STATUS_IN_PROGRESS_ID: ${{ secrets.GITHUB_STATUS_IN_PROGRESS_ID }}
+          GITHUB_STATUS_DONE_ID: ${{ secrets.GITHUB_STATUS_DONE_ID }}
+          BMAD_OUTPUT_DIR: ${{ secrets.BMAD_OUTPUT_DIR }}
+        run: |
+          python -m bmad_sync.sync_action
