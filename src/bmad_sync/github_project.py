@@ -77,7 +77,6 @@ class GitHubProjectClient:
             "            ... on DraftIssue { title }"
             "            ... on Issue { title }"
             "          }"
-            "          title"
             "        }"
             "      }"
             "    }"
@@ -171,7 +170,7 @@ class GitHubProjectClient:
     @staticmethod
     def _extract_title(node: dict[str, Any]) -> str:
         content = node.get("content") or {}
-        title = content.get("title") or node.get("title") or ""
+        title = content.get("title") or ""
         return title
 
     @staticmethod
@@ -182,13 +181,15 @@ class GitHubProjectClient:
 
 
 def build_client_from_env() -> GitHubProjectClient:
-    token = _required_env("GITHUB_TOKEN")
-    project_id = _required_env("GITHUB_PROJECT_ID")
-    status_field_id = _required_env("GITHUB_STATUS_FIELD_ID")
+    token = os.getenv("BMAD_GH_TOKEN") or os.getenv("GITHUB_TOKEN")
+    if not token:
+        raise ValueError("Missing required environment variable: BMAD_GH_TOKEN or GITHUB_TOKEN")
+    project_id = _required_env("BMAD_GH_PROJECT_ID")
+    status_field_id = _required_env("BMAD_GH_STATUS_FIELD_ID")
     status_options = StatusOptions(
-        todo=_required_env("GITHUB_STATUS_TODO_ID"),
-        in_progress=_required_env("GITHUB_STATUS_IN_PROGRESS_ID"),
-        done=_required_env("GITHUB_STATUS_DONE_ID"),
+        todo=_required_env("BMAD_GH_STATUS_TODO_ID"),
+        in_progress=_required_env("BMAD_GH_STATUS_IN_PROGRESS_ID"),
+        done=_required_env("BMAD_GH_STATUS_DONE_ID"),
     )
     return GitHubProjectClient(
         token=token,

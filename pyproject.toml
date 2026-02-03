@@ -9,3 +9,9 @@ dependencies = [
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+norecursedirs = [
+    ".git",
+    ".tmp",
+    ".pytest_cache",
+    "tests/_tmp",
+]
