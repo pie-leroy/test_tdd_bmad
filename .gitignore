@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 .venv/
+.idea/
+_bmad/
+_bmad-output/
+aws_q.md
