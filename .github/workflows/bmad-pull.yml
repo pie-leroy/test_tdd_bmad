@@ -1,0 +1,30 @@
+name: bmad-pull
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run BMAD pull
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BMAD_GH_TOKEN: ${{ secrets.BMAD_GH_TOKEN }}
+          BMAD_GH_PROJECT_ID: ${{ secrets.BMAD_GH_PROJECT_ID }}
+          BMAD_GH_STATUS_FIELD_ID: ${{ secrets.BMAD_GH_STATUS_FIELD_ID }}
+          BMAD_GH_STATUS_TODO_ID: ${{ secrets.BMAD_GH_STATUS_TODO_ID }}
+          BMAD_GH_STATUS_IN_PROGRESS_ID: ${{ secrets.BMAD_GH_STATUS_IN_PROGRESS_ID }}
+          BMAD_GH_STATUS_DONE_ID: ${{ secrets.BMAD_GH_STATUS_DONE_ID }}
+          BMAD_OUTPUT_DIR: ${{ secrets.BMAD_OUTPUT_DIR }}
+          PYTHONPATH: src
+        run: |
+          python -m bmad_sync.pull_action

@@ -22,6 +22,13 @@ class ProjectItem:
 
 
 @dataclass(frozen=True)
+class ProjectStoryDetail:
+    story_id: str
+    title: str
+    status: str
+
+
+@dataclass(frozen=True)
 class StatusOptions:
     todo: str
     in_progress: str
@@ -48,6 +55,10 @@ class GitHubProjectClient:
     def list_project_stories(self) -> list[str]:
         items = self._list_project_items()
         return [item.story_id for item in items]
+
+    def list_project_story_details(self) -> list[ProjectStoryDetail]:
+        items = self._list_project_story_details()
+        return items
 
     def upsert_story(self, *, story_id: str, title: str, status: str) -> None:
         items = self._list_project_items()
@@ -96,6 +107,53 @@ class GitHubProjectClient:
             story_id = self._extract_story_id(title)
             if story_id:
                 items.append(ProjectItem(item_id=node["id"], story_id=story_id))
+        return items
+
+    def _list_project_story_details(self) -> list[ProjectStoryDetail]:
+        query = (
+            "query($projectId:ID!) {"
+            "  node(id:$projectId) {"
+            "    ... on ProjectV2 {"
+            "      items(first:100) {"
+            "        nodes {"
+            "          id"
+            "          content {"
+            "            ... on DraftIssue { title }"
+            "            ... on Issue { title }"
+            "          }"
+            "          fieldValues(first:20) {"
+            "            nodes {"
+            "              ... on ProjectV2ItemFieldSingleSelectValue {"
+            "                field {"
+            "                  ... on ProjectV2SingleSelectField { id name }"
+            "                }"
+            "                name"
+            "              }"
+            "            }"
+            "          }"
+            "        }"
+            "      }"
+            "    }"
+            "  }"
+            "}"
+        )
+        data = self._graphql(query, variables={"projectId": self._project_id})
+        nodes = (
+            data.get("data", {})
+            .get("node", {})
+            .get("items", {})
+            .get("nodes", [])
+        )
+        items: list[ProjectStoryDetail] = []
+        for node in nodes:
+            title = self._extract_title(node)
+            story_id = self._extract_story_id(title)
+            if not story_id:
+                continue
+            status = self._extract_status(node)
+            if not status:
+                raise ValueError(f"Missing status for story {story_id}")
+            items.append(ProjectStoryDetail(story_id=story_id, title=self._strip_story_prefix(title), status=status))
         return items
 
     def _add_draft_issue(self, *, title: str) -> str:
@@ -171,6 +229,21 @@ class GitHubProjectClient:
     def _extract_title(node: dict[str, Any]) -> str:
         content = node.get("content") or {}
         title = content.get("title") or ""
+        return title
+
+    def _extract_status(self, node: dict[str, Any]) -> str | None:
+        field_values = node.get("fieldValues") or {}
+        nodes = field_values.get("nodes") or []
+        for value in nodes:
+            field = value.get("field") or {}
+            if field.get("id") == self._status_field_id:
+                return value.get("name")
+        return None
+
+    @staticmethod
+    def _strip_story_prefix(title: str) -> str:
+        if title.startswith("[") and "]" in title:
+            return title.split("]", 1)[1].strip()
         return title
 
     @staticmethod
